@@ -1,6 +1,7 @@
 from rest_framework.viewsets import ModelViewSet
-from .serializers import CategorySerializers, ProductSerializers
+from .serializers import CategorySerializers, ProductSerializers, ProductListingSerializer
 from .models import Category, Product
+from rest_framework.permissions import IsAdminUser, AllowAny
 
 
 # class CategoryView(APIView):
@@ -52,11 +53,27 @@ from .models import Category, Product
 #     serializer_class = ProductSerializers
 
 
-class CategoryView(ModelViewSet):
+class PermissionMixin:
+    def get_permissions(self):
+        if self.action in ['list', 'retrieve']:
+            self.permission_classes = [AllowAny]
+        else:
+            self.permission_classes = [IsAdminUser]
+        return super().get_permissions()
+
+
+class CategoryView(PermissionMixin, ModelViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializers
 
 
-class ProductView(ModelViewSet):
+class ProductView(PermissionMixin, ModelViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializers
+
+    def get_serializer_class(self):
+        if self.action == 'list':
+            return ProductListingSerializer
+        return self.serializer_class
+
+
